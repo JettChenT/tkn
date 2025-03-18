@@ -1,10 +1,12 @@
 use clap::Parser;
 use color_eyre::{Context as _, Result, eyre::eyre};
 use std::{
+    fmt::Display,
     io::{self, Read},
     path::PathBuf,
 };
-use tiktoken_rs::o200k_base;
+use tabled::settings::{Alignment, Style, object::Columns};
+use tabled::{Table, Tabled};
 use tokenizers::Tokenizer;
 
 #[derive(Parser, Debug)]
@@ -19,17 +21,37 @@ struct TokenStats {
     cost_cached_dollars: f64,
 }
 
+#[derive(Debug, Tabled)]
+struct TokenTableItem<'a> {
+    tokenizer: &'a TokenizerType,
+    total_tokens: usize,
+    cost_dollars: f64,
+    cost_cached_dollars: f64,
+}
+
 struct ModelCostInfo {
     input_cost: f64,
     output_cost: f64,
     cached_input_cost: f64,
 }
 
+#[derive(Debug, Clone)]
 enum TokenizerType {
     Gpt4o,
     Gemini,
     Claude_3_7,
     Claude_3_5,
+}
+
+impl Display for TokenizerType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self {
+            Self::Gpt4o => write!(f, "GPT 4O"),
+            Self::Gemini => write!(f, "Gemini"),
+            Self::Claude_3_7 => write!(f, "Claude 3.7"),
+            Self::Claude_3_5 => write!(f, "Claude 3.5"),
+        }
+    }
 }
 
 impl TokenizerType {
@@ -68,7 +90,7 @@ impl TokenizerType {
     }
 }
 
-fn calc_stats(content: &String, tokenizer_type: TokenizerType) -> Result<TokenStats> {
+fn calc_stats(content: &String, tokenizer_type: &TokenizerType) -> Result<TokenStats> {
     let tokenizer = Tokenizer::from_pretrained(tokenizer_type.as_hf(), None)
         .map_err(|e| eyre!("Failed to initialize tokenizer: {}", e))?;
     let tokens = tokenizer
@@ -96,21 +118,28 @@ fn main() -> Result<()> {
         }
     };
 
-    println!(
-        "GPT-4o stats: {:#?}",
-        calc_stats(&content, TokenizerType::Gpt4o)?
-    );
-    println!(
-        "Gemini (est. via gemma 2) stats: {:#?}",
-        calc_stats(&content, TokenizerType::Gemini)?
-    );
-    println!(
-        "Claude 3.7 stats: {:#?}",
-        calc_stats(&content, TokenizerType::Claude_3_7)?
-    );
-    println!(
-        "Claude 3.5 stats: {:#?}",
-        calc_stats(&content, TokenizerType::Claude_3_5)?
-    );
+    let tokenizers = vec![
+        TokenizerType::Gpt4o,
+        TokenizerType::Gemini,
+        TokenizerType::Claude_3_7,
+        TokenizerType::Claude_3_5,
+    ];
+    let token_stats = tokenizers
+        .iter()
+        .map(|tokenizer_type| calc_stats(&content, tokenizer_type))
+        .collect::<Result<Vec<TokenStats>>>()?;
+
+    let token_stats_table = token_stats
+        .iter()
+        .enumerate()
+        .map(|(idx, it)| TokenTableItem {
+            tokenizer: &tokenizers[idx],
+            total_tokens: it.total_tokens,
+            cost_dollars: it.cost_dollars,
+            cost_cached_dollars: it.cost_cached_dollars,
+        });
+    let mut table = Table::new(token_stats_table);
+    table.with(Style::modern());
+    println!("{}", table);
     Ok(())
 }

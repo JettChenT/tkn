@@ -6,5 +6,5 @@ edition = "2024"
 [dependencies]
 clap = { version = "4.5.32", features = ["derive"] }
 color-eyre = "0.6"
-tiktoken-rs = "0.6.0"
 tokenizers = { version = "0.21.1", features = ["http", "hf-hub"] }
+tabled = { version = "0.18.0" }
