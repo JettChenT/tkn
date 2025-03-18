@@ -8,3 +8,5 @@ clap = { version = "4.5.32", features = ["derive"] }
 color-eyre = "0.6"
 tokenizers = { version = "0.21.1", features = ["http", "hf-hub"] }
 tabled = { version = "0.18.0" }
+indicatif = { version = "0.17.11", features = ["rayon"] }
+rayon = "1.10.0"

@@ -647,6 +647,7 @@ dependencies = [
  "console",
  "number_prefix",
  "portable-atomic",
+ "rayon",
  "unicode-width",
  "web-time",
 ]
@@ -1311,6 +1312,8 @@ version = "0.1.0"
 dependencies = [
  "clap",
  "color-eyre",
+ "indicatif",
+ "rayon",
  "tabled",
  "tokenizers",
 ]

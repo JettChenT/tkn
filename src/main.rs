@@ -1,5 +1,7 @@
 use clap::Parser;
 use color_eyre::{Context as _, Result, eyre::eyre};
+use indicatif::{ParallelProgressIterator, ProgressBar, ProgressStyle};
+use rayon::prelude::*;
 use std::{
     fmt::Display,
     io::{self, Read},
@@ -124,9 +126,16 @@ fn main() -> Result<()> {
         TokenizerType::Claude_3_7,
         TokenizerType::Claude_3_5,
     ];
+    let pb = ProgressBar::new(tokenizers.len() as u64);
+    let spinner_style = ProgressStyle::with_template("{prefix:.bold.dim} {bar:70.cyan/blue}")
+        .unwrap()
+        .tick_chars("⠁⠂⠄⡀⢀⠠⠐⠈ ");
+    pb.set_style(spinner_style);
+    pb.set_prefix("Tokenizing...");
     let token_stats = tokenizers
-        .iter()
+        .par_iter()
         .map(|tokenizer_type| calc_stats(&content, tokenizer_type))
+        .progress_with(pb)
         .collect::<Result<Vec<TokenStats>>>()?;
 
     let token_stats_table = token_stats
