@@ -124,7 +124,6 @@ fn main() -> Result<()> {
         TokenizerType::Gpt4o,
         TokenizerType::Gemini,
         TokenizerType::Claude_3_7,
-        TokenizerType::Claude_3_5,
     ];
     let pb = ProgressBar::new(tokenizers.len() as u64);
     let spinner_style = ProgressStyle::with_template("{prefix:.bold.dim} {bar:70.cyan/blue}")
